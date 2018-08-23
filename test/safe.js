@@ -5,6 +5,7 @@ contract('Safe', async accounts => {
     it('removes modules')
     it('can not remove last verification module')
     it('successfully executes transaction')
+    it('incremented nonce')
     it('cannot replay transaction')
     it('refunded caller')
 })
