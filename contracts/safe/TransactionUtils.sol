@@ -1,8 +1,10 @@
 pragma solidity ^0.4.22;
 
+import './HasOperations.sol';
 
-contract TransactionUtils {
-    function getTxHash(address _dest, uint _value, bytes _data, Operation _op, uint _nonce, uint _timestamp, address[] _tokens, uint[] _tokenValues) pure public returns (bytes32) {
+
+contract TransactionUtils is HasOperations {
+    function getTxHash(address _dest, uint _value, bytes _data, Operation _op, uint _nonce, uint _timestamp, address[] _tokens, uint[] _tokenValues) view public returns (bytes32) {
         return keccak256(
             abi.encode(
                 address(this), // No replay between Safes
@@ -11,6 +13,7 @@ contract TransactionUtils {
                 _data,
                 _op,
                 _nonce,
+                _timestamp,
                 _tokens,
                 _tokenValues
             )
