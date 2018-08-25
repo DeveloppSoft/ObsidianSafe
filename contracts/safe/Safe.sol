@@ -4,54 +4,20 @@ pragma experimental ABIEncoderV2; // for bytes[]
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol';
 
-import '../modules/IModule.sol';
-import './ISafe.sol';
-import './TransactionUtils.sol';
+import '../interfaces/IModule.sol';
+import '../interfaces/ISafe.sol';
+import './Modulable.sol';
 
-// Credits to the GNOSIS Safe for the executeTx() function and
-// the inspiration for the module management
-
-// Albeit we don't use getTxHash it is added to be used by users
-// and modules
-
-contract Safe is ISafe, TransactionUtils {
+contract Safe is ISafe, Modulable {
     using SafeMath for uint;
-
-    address private constant MODULE_HEAD_MARKER = 0x1;
-
-    uint private nbVerifModules = 0;
-    uint private nbExecModules = 0;
-
-    mapping (address => address) private verifModules;
-    mapping (address => address) private execModules;
 
     uint public currentNonce; // Increment for each TX
 
-    bool private initialized = false;
-
     event TransactionExecuted(bool indexed _success, address indexed _module, address indexed _to, uint _value, bytes _data, Operation _op);
     event ContractDeployed(address _newContract);
-    event ModuleChanged(address indexed _module, bool indexed _installed, bool _isVerif, bool _isExec);
 
-    modifier onlyThis {
-        require(msg.sender == address(this) || !initialized);
-        _;
-    }
-
-    constructor(address _initialVerif, address _initialExec) public {
+    constructor(address _initialVerif, address _initialExec) public Modulable(_initialVerif, _initialExec) {
         currentNonce = 0;
-
-        // Init lists of modules
-        verifModules[MODULE_HEAD_MARKER] = MODULE_HEAD_MARKER;
-        execModules[MODULE_HEAD_MARKER] = MODULE_HEAD_MARKER;
-
-        // Install modules
-        // TODO Shall we avoid removing all modules?
-        //      Maybe this should be the role of a module?
-        installModule(_initialVerif, true, false);
-        installModule(_initialExec, false, true);
-
-        initialized = true;
     }
 
     function isNonceValid(uint _nonce) view public returns (bool) {
@@ -62,35 +28,78 @@ contract Safe is ISafe, TransactionUtils {
         return _nonce == currentNonce.add(1);
     }
 
-    function isTxValid(address _dest, uint _value, bytes _data, Operation _op, uint _nonce, uint _timestamp, address[] _tokens, uint[] _tokenValues, bytes[] _signatures) public view returns (bool) {
+    function isTxValid(
+        address _dest,
+        uint _value,
+        bytes _data,
+        Operation _op,
+        uint _nonce,
+        uint _timestamp,
+        uint _minimumGasNeeded,
+        uint _gasProvided,
+        address _reimbursementToken, // or 0x0 for ETH
+        uint _gasPrice,
+        bytes[] _signatures
+    ) public view returns (bool) {
+        if (_gasProvided < _minimumGasNeeded) {
+            return false;
+        }
+
         if (!isNonceValid(_nonce)) {
             return false;
         }
 
-        if (_tokens.length != _tokenValues.length) {
-            return false;
-        }
-
-        address[] memory allVerifModules = getVerifModules();
+        address[] memory allVerifModules = listVerifModules();
         for (uint i = 0; i < allVerifModules.length; i++) {
-            if (!IModule(allVerifModules[i]).verify(
+            if (
+                !IModule(
+                    allVerifModules[i]
+                ).verify(
+                    _dest,
+                    _value,
+                    _data,
+                    _op,
+                    _nonce,
+                    _timestamp,
+                    _reimbursementToken,
+                    _gasPrice,
+                    _signatures
+                )
+            ) {
+                return false;
+            }
+        }
+    }
+
+    function exec(
+        address _dest,
+        uint _value,
+        bytes _data,
+        Operation _op,
+        uint _nonce,
+        uint _timestamp,
+        uint _minimumGasNeeded,
+        address _reimbursementToken, // or 0x0 for ETH
+        uint _gasPrice,
+        bytes[] _signatures
+    ) public {
+        uint startingGas = gasleft();
+
+        require(
+            isTxValid(
                 _dest,
                 _value,
                 _data,
                 _op,
                 _nonce,
                 _timestamp,
-                _tokens,
-                _tokenValues,
+                _minimumGasNeeded,
+                startingGas,
+                _reimbursementToken,
+                _gasPrice,
                 _signatures
-            )) {
-                return false;
-            }
-        }
-    }
-
-    function exec(address _dest, uint _value, bytes _data, Operation _op, uint _nonce, uint _timestamp, address[] _tokens, uint[] _tokenValues, bytes[] _signatures) public {
-        require(isTxValid(_dest, _value, _data, _op, _nonce, _timestamp, _tokens, _tokenValues, _signatures));
+            )
+        );
 
         // Always increment nonce
         currentNonce = currentNonce.add(1);
@@ -109,18 +118,19 @@ contract Safe is ISafe, TransactionUtils {
             _op
         );
 
-        // Reimburse
-        for (uint i = 0; i < _tokens.length; i++) {
-            if (_tokens[i] == 0x0) {
-                require(msg.sender.send(_tokenValues[i]));
+        if (_gasPrice > 0) {
+            uint amount = (startingGas - gasleft()) * _gasPrice;
+
+            if (_reimbursementToken == 0x0) {
+                msg.sender.transfer(amount);
             } else {
-                require(ERC20Basic(_tokens[i]).transfer(msg.sender, _tokenValues[i]));
+                require(ERC20Basic(_reimbursementToken).transfer(msg.sender, amount));
             }
         }
     }
 
     function execFromModule(address _dest, uint _value, bytes _data, Operation _op) public {
-        require(isRegisteredExecutionModule(msg.sender));
+        require(moduleCanExecuteTx(msg.sender));
 
         emit TransactionExecuted(
             executeTx(
@@ -159,109 +169,5 @@ contract Safe is ISafe, TransactionUtils {
         } else {
             revert("Unknown operation"); // Should never, ever be reached
         }
-    }
-
-    function getVerifModules() public view returns (address[]) {
-        address[] memory allVerifModules = new address[](nbVerifModules);
-
-        uint index = 0;
-        address currentModule = verifModules[MODULE_HEAD_MARKER];
-
-        // Goes from one marker to the second
-        while (currentModule != MODULE_HEAD_MARKER) {
-            allVerifModules[index] = currentModule; // Save
-            index++; // Next element
-
-            currentModule = verifModules[currentModule]; // Next module
-        }
-
-        return allVerifModules;
-    }
-
-    function getExecModules() public view returns (address[]) {
-        address[] memory allExecModules = new address[](nbExecModules);
-
-        uint index = 0;
-        address currentModule = execModules[MODULE_HEAD_MARKER];
-
-        // Goes from one marker to the second
-        while (currentModule != MODULE_HEAD_MARKER) {
-            allExecModules[index] = currentModule; // Save
-            index++; // Next element
-
-            currentModule = execModules[currentModule]; // Next module
-        }
-
-        return allExecModules;
-    }
-
-    function isRegisteredExecutionModule(address _module) internal view returns (bool) {
-        return execModules[_module] != 0x0;
-    }
-
-    function installModule(address _module, bool _isVerif, bool _isExec) public onlyThis returns (bool) {
-        require(_module != MODULE_HEAD_MARKER && _module != 0x0, "Invalid Module");
-        require(_isVerif || _isExec);
-        
-        if (_isVerif) {
-            require(verifModules[_module] == 0x0, "Module is already installed");
-
-            verifModules[_module] = verifModules[MODULE_HEAD_MARKER];
-            verifModules[MODULE_HEAD_MARKER] = _module;
-
-            nbVerifModules++;
-        }
-
-        if (_isExec) {
-            require(execModules[_module] == 0x0, "Module is already installed");
-
-            execModules[_module] = execModules[MODULE_HEAD_MARKER];
-            execModules[MODULE_HEAD_MARKER] = _module;
-
-            nbExecModules++;
-        }
-
-        emit ModuleChanged(
-            _module,
-            true,
-            _isVerif,
-            _isExec
-        );
-
-        return true;
-    }
-
-    function uninstallModule(address _previousModule, address _module, bool _isVerif, bool _isExec) public onlyThis returns (bool) {
-        require(_module != MODULE_HEAD_MARKER && _module != 0x0, "Invalid Module");
-        require(_isVerif || _isExec);
-
-        if (_isVerif) {
-            require(verifModules[_module] != 0x0, "Module is not installed");
-            require(verifModules[_previousModule] == _module, "Invalid module pair");
-
-            verifModules[_previousModule] = verifModules[_module];
-            verifModules[_module] = 0x0;
-
-            nbVerifModules--;
-        }
-
-        if (_isExec) {
-            require(execModules[_module] != 0x0, "Module is not installed");
-            require(execModules[_previousModule] == _module, "Invalid module pair");
-
-            execModules[_previousModule] = execModules[_module];
-            execModules[_module] = 0x0;
-
-            nbExecModules--;
-        }
-
-        emit ModuleChanged(
-            _module,
-            false,
-            _isVerif,
-            _isExec
-        );
-
-        return true;
     }
 }
