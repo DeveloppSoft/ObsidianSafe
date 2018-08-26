@@ -72,7 +72,7 @@ contract('Signers', async accounts => {
         })
     })
 
-    context('access control', async () => {
+    context('Access control', async () => {
         const dst   = '0x42'
         const value = 2
         const data  = '0xdeadbeef'
