@@ -80,6 +80,7 @@ contract('Signers', async accounts => {
         const nonce = 1
         const time  = 23
         const token = '0x21'
+        const gasMi = 0
         const gasPr = 90
 
         let hash = {}
@@ -98,6 +99,7 @@ contract('Signers', async accounts => {
                 nonce,
                 time,
                 token,
+                gasMi,
                 gasPr
             )
 
@@ -119,6 +121,7 @@ contract('Signers', async accounts => {
                     nonce,
                     time,
                     token,
+                    gasMi,
                     gasPr,
                     signatures
                 ),
@@ -136,6 +139,7 @@ contract('Signers', async accounts => {
                     nonce,
                     time,
                     token,
+                    gasMi,
                     gasPr,
                     sign0 // One is missing
                 ),
@@ -153,6 +157,7 @@ contract('Signers', async accounts => {
                     nonce,
                     time,
                     token,
+                    gasMi,
                     gasPr,
                     '0xdeadbeef' //signatures
                 ),

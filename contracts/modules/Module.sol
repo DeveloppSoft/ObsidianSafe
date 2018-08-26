@@ -35,6 +35,7 @@ contract Module is HasOperations, NoOwner {
         uint _nonce,
         uint _timestamp,
         address _reimbursementToken,
+        uint _minimumGasNeeded,
         uint _gasPrice
     ) public view returns (bytes32) {
         return keccak256(
@@ -48,6 +49,7 @@ contract Module is HasOperations, NoOwner {
                 _nonce,
                 _timestamp,
                 _reimbursementToken,
+                _minimumGasNeeded,
                 _gasPrice
             )
         );

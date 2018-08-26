@@ -12,6 +12,7 @@ contract IModule is HasOperations {
         uint _nonce,
         uint _timestamp,
         address _reimbursementToken, // or 0x0 for ETH
+        uint _minimumGasNeeded,
         uint _gasPrice,
         bytes _signatures
     ) public view returns (bool);

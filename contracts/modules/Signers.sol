@@ -36,6 +36,7 @@ contract Signers is IModule, Module {
         uint _nonce,
         uint _timestamp,
         address _reimbursementToken, // or 0x0 for ETH
+        uint _minimumGasNeeded,
         uint _gasPrice,
         bytes _signatures
     ) public view returns (bool) {
@@ -51,6 +52,7 @@ contract Signers is IModule, Module {
             _nonce,
             _timestamp,
             _reimbursementToken,
+            _minimumGasNeeded,
             _gasPrice
         );
 

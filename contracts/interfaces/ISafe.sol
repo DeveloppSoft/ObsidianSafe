@@ -11,8 +11,8 @@ contract ISafe is HasOperations {
         Operation _op,
         uint _nonce,
         uint _timestamp,
-        uint _minimumGasNeeded,
         address _reimbursementToken, // or 0x0 for ETH
+        uint _minimumGasNeeded,
         uint _gasPrice,
         bytes _signatures
     ) public;
