@@ -1,0 +1,29 @@
+image: node:alpine
+
+before_script:
+    - apk update && apk add --no-cache python alpine-sdk git
+    - npm install -g truffle ganache-cli
+
+stages:
+    - install
+    - build
+    - test
+
+install:
+    stage: install
+    script:
+        - npm install
+
+build:
+    stage: build
+    script:
+        - truffle compile
+
+test:
+    stage: test
+    script:
+        - truffle test
+
+# Maybe we could add a linter?
+# And static analysis?
+# And coverage?
