@@ -1,3 +1,4 @@
 #! /bin/sh
 
-grep "TODO" -r ./
+grep "TODO" -r ./contracts
+grep "TODO" -r ./test
