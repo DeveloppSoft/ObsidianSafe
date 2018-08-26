@@ -1,9 +1,10 @@
 pragma solidity ^0.4.22;
 
-
 import '../common/HasOperations.sol';
+import 'openzeppelin-solidity/contracts/ownership/NoOwner.sol';
 
-contract Module is HasOperations {
+
+contract Module is HasOperations, NoOwner {
     address public safe;
 
     // first bytes of keccak256(abi.encode("obsidian"))
@@ -15,8 +16,11 @@ contract Module is HasOperations {
         _;
     }
 
-    constructor(address _safe) public {
+    constructor(address _safe) public NoOwner() {
         safe = _safe;
+
+        // Owner in OZ's Ownable is set to _safe
+        owner = _safe;
     }
 
     function updateSafe(address _newSafe) public onlySafe {
