@@ -14,9 +14,15 @@ contract Safe is ISafe, Modulable {
 
     event TransactionExecuted(bool indexed _success, address indexed _module, address indexed _to, uint _value, bytes _data, Operation _op);
     event ContractDeployed(address _newContract);
+    event GotFunds(address indexed _from, uint _amount);
 
     constructor(address _initialVerif, address _initialExec) public Modulable(_initialVerif, _initialExec) {
         currentNonce = 0;
+    }
+
+    // TODO take inspiration from Aragon for modulable token receivers
+    function () public payable {
+        emit GotFunds(msg.sender, msg.value);
     }
 
     function isNonceValid(uint _nonce) view public returns (bool) {
@@ -34,40 +40,34 @@ contract Safe is ISafe, Modulable {
         Operation _op,
         uint _nonce,
         uint _timestamp,
-        uint _minimumGasNeeded,
-        uint _gasProvided,
         address _reimbursementToken, // or 0x0 for ETH
+        uint _minimumGasNeeded,
         uint _gasPrice,
         bytes _signatures
     ) public view returns (bool) {
-        if (_gasProvided < _minimumGasNeeded) {
-            return false;
-        }
-
         if (!isNonceValid(_nonce)) {
             return false;
         }
 
         address[] memory allVerifModules = listVerifModules();
         for (uint i = 0; i < allVerifModules.length; i++) {
-            if (
-                !IModule(
-                    allVerifModules[i]
-                ).verify(
-                    _dest,
-                    _value,
-                    _data,
-                    _op,
-                    _nonce,
-                    _timestamp,
-                    _reimbursementToken,
-                    _gasPrice,
-                    _signatures
-                )
-            ) {
+            if (IModule(allVerifModules[i]).verify(
+                _dest,
+                _value,
+                _data,
+                _op,
+                _nonce,
+                _timestamp,
+                _reimbursementToken,
+                _minimumGasNeeded,
+                _gasPrice,
+                _signatures
+            ) == false) {
                 return false;
             }
         }
+
+        return true;
     }
 
     function exec(
@@ -77,12 +77,13 @@ contract Safe is ISafe, Modulable {
         Operation _op,
         uint _nonce,
         uint _timestamp,
-        uint _minimumGasNeeded,
         address _reimbursementToken, // or 0x0 for ETH
+        uint _minimumGasNeeded,
         uint _gasPrice,
         bytes _signatures
     ) public {
         uint startingGas = gasleft();
+        require(startingGas >= _minimumGasNeeded, 'Need more gas');
 
         require(
             isTxValid(
@@ -92,9 +93,8 @@ contract Safe is ISafe, Modulable {
                 _op,
                 _nonce,
                 _timestamp,
-                _minimumGasNeeded,
-                startingGas,
                 _reimbursementToken,
+                _minimumGasNeeded,
                 _gasPrice,
                 _signatures
             )
@@ -118,6 +118,9 @@ contract Safe is ISafe, Modulable {
         );
 
         if (_gasPrice > 0) {
+            // 21000 is for the gas to send the reimbursement
+            //uint gasBeforeReimbursement = gasleft();
+            //uint amount = (21000 + (startingGas - gasBeforeReimbursement)) * _gasPrice;
             uint amount = (startingGas - gasleft()) * _gasPrice;
 
             if (_reimbursementToken == 0x0) {
@@ -125,6 +128,11 @@ contract Safe is ISafe, Modulable {
             } else {
                 require(ERC20Basic(_reimbursementToken).transfer(msg.sender, amount));
             }
+
+            // TODO discuss if this is needed
+            // Mitigate the case where a token could choose to use too much gas
+            //uint gasUsedForReimbursement = gasBeforeReimbursement - gasleft();
+            //assert(gasUsedForReimbursement <= 21000);
         }
     }
 
