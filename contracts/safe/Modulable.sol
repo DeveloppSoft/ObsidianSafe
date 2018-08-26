@@ -1,13 +1,13 @@
 pragma solidity ^0.4.22;
 
-import '../libraries/ModuleManager.sol';
+import '../libraries/ListOnSteroids.sol';
 
 
 contract Modulable {
-    using ModuleManager for ModuleManager.Modules;
+    using ListOnSteroids for ListOnSteroids.List;
 
-    ModuleManager.Modules private verifModules;
-    ModuleManager.Modules private execModules;
+    ListOnSteroids.List private verifModules;
+    ListOnSteroids.List private execModules;
 
     event ModuleChanged(address indexed _module, bool indexed _installed, bool _isVerif, bool _isExec);
 

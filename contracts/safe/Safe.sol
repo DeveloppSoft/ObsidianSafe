@@ -1,5 +1,4 @@
 pragma solidity ^0.4.22;
-pragma experimental ABIEncoderV2; // for bytes[]
 
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol';
@@ -39,7 +38,7 @@ contract Safe is ISafe, Modulable {
         uint _gasProvided,
         address _reimbursementToken, // or 0x0 for ETH
         uint _gasPrice,
-        bytes[] _signatures
+        bytes _signatures
     ) public view returns (bool) {
         if (_gasProvided < _minimumGasNeeded) {
             return false;
@@ -81,7 +80,7 @@ contract Safe is ISafe, Modulable {
         uint _minimumGasNeeded,
         address _reimbursementToken, // or 0x0 for ETH
         uint _gasPrice,
-        bytes[] _signatures
+        bytes _signatures
     ) public {
         uint startingGas = gasleft();
 
