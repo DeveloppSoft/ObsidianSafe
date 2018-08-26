@@ -1,6 +1,6 @@
 pragma solidity ^0.4.22;
 
-import '../libraries/ListOnSteroids.sol';
+import "../libraries/ListOnSteroids.sol";
 
 
 contract Modulable {
@@ -12,7 +12,7 @@ contract Modulable {
     event ModuleChanged(address indexed _module, bool indexed _installed, bool _isVerif, bool _isExec);
 
     modifier onlyThis {
-        require(msg.sender == address(this));
+        require(msg.sender == address(this), "Function can only be called by this contract");
         _;
     }
 
@@ -29,7 +29,7 @@ contract Modulable {
     }
 
     function installModule(address _module, bool _isVerif, bool _isExec) public onlyThis returns (bool) {
-        require(_isVerif || _isExec);
+        require(_isVerif || _isExec, "Module has to be exec or / and verif");
         
         if (_isVerif) {
             verifModules.insert(_module);
@@ -50,7 +50,7 @@ contract Modulable {
     }
 
     function uninstallModule(address _previousModule, address _module, bool _isVerif, bool _isExec) public onlyThis returns (bool) {
-        require(_isVerif || _isExec);
+        require(_isVerif || _isExec, "Module has to be exec or / and verif");
 
         if (_isVerif) {
             verifModules.remove(_previousModule, _module);

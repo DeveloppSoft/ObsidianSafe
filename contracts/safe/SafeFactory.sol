@@ -1,8 +1,8 @@
 pragma solidity ^0.4.22;
 
 
-import './Safe.sol';
-import '../modules/Signers.sol';
+import "./Safe.sol";
+import "../modules/Signers.sol";
 
 contract SafeFactory {
     event SafeCreated(address indexed _sender, address _safe);

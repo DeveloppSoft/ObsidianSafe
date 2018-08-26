@@ -1,11 +1,11 @@
 pragma solidity ^0.4.22;
 
-import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol';
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
-import '../interfaces/IModule.sol';
-import '../interfaces/ISafe.sol';
-import './Modulable.sol';
+import "../interfaces/IModule.sol";
+import "../interfaces/ISafe.sol";
+import "./Modulable.sol";
 
 contract Safe is ISafe, Modulable {
     using SafeMath for uint;
@@ -25,7 +25,7 @@ contract Safe is ISafe, Modulable {
         emit GotFunds(msg.sender, msg.value);
     }
 
-    function isNonceValid(uint _nonce) view public returns (bool) {
+    function isNonceValid(uint _nonce) public view returns (bool) {
         // In the hypothetical context of an heavily used Safe,
         // the nonce COULD hypothetically reach the maximum value
         // of an uint256, in such case we can't prevent TX replay
@@ -83,7 +83,7 @@ contract Safe is ISafe, Modulable {
         bytes _signatures
     ) public {
         uint startingGas = gasleft();
-        require(startingGas >= _minimumGasNeeded, 'Need more gas');
+        require(startingGas >= _minimumGasNeeded, "Need more gas");
 
         require(
             isTxValid(
@@ -97,7 +97,8 @@ contract Safe is ISafe, Modulable {
                 _minimumGasNeeded,
                 _gasPrice,
                 _signatures
-            )
+            ),
+            "TX is not valid"
         );
 
         // Always increment nonce
@@ -126,7 +127,7 @@ contract Safe is ISafe, Modulable {
             if (_reimbursementToken == 0x0) {
                 msg.sender.transfer(amount);
             } else {
-                require(ERC20Basic(_reimbursementToken).transfer(msg.sender, amount));
+                require(ERC20Basic(_reimbursementToken).transfer(msg.sender, amount), "Cannot send token");
             }
 
             // TODO discuss if this is needed
@@ -137,7 +138,7 @@ contract Safe is ISafe, Modulable {
     }
 
     function execFromModule(address _dest, uint _value, bytes _data, Operation _op) public {
-        require(moduleCanExecuteTx(msg.sender));
+        require(moduleCanExecuteTx(msg.sender), "Sender not allowed to call this function");
 
         emit TransactionExecuted(
             executeTx(
@@ -159,15 +160,18 @@ contract Safe is ISafe, Modulable {
 
         // Credits to the Gnosis Safe Executor.sol contract
         if (_op == Operation.Call) {
+            // solium-disable-next-line security/no-inline-assembly
             assembly {
                 success := call(gasTx, _dest, _value, add(_data, 0x20), mload(_data), 0, 0)
             }
         } else if (_op == Operation.DelegateCall) {
+            // solium-disable-next-line security/no-inline-assembly
             assembly {
                 success := delegatecall(gasTx, _dest, add(_data, 0x20), mload(_data), 0, 0)
             }
         } else if (_op == Operation.Create) {
             address newContract = 0x0;
+            // solium-disable-next-line security/no-inline-assembly
             assembly {
                 newContract := create(0, add(_data, 0x20), mload(_data))
             }

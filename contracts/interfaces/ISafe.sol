@@ -1,6 +1,6 @@
 pragma solidity ^0.4.22;
 
-import '../common/HasOperations.sol';
+import "../common/HasOperations.sol";
 
 
 contract ISafe is HasOperations {
@@ -14,7 +14,6 @@ contract ISafe is HasOperations {
         address _reimbursementToken, // or 0x0 for ETH
         uint _minimumGasNeeded,
         uint _gasPrice,
-        bytes _signatures
-    ) public;
+        bytes _signatures) public;
     function execFromModule(address _dest, uint _value, bytes _data, Operation _op) public;
 }

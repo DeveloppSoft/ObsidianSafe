@@ -1,10 +1,19 @@
 pragma solidity ^0.4.22;
 
-import './HasOperations.sol';
+import "./HasOperations.sol";
 
 
 contract TransactionUtils is HasOperations {
-    function getTxHash(address _dest, uint _value, bytes _data, Operation _op, uint _nonce, uint _timestamp, address[] _tokens, uint[] _tokenValues) view public returns (bytes32) {
+    function getTxHash(
+        address _dest,
+        uint _value,
+        bytes _data,
+        Operation _op,
+        uint _nonce,
+        uint _timestamp,
+        address[] _tokens,
+        uint[] _tokenValues
+    ) public view returns (bytes32) {
         return keccak256(
             abi.encode(
                 address(this), // No replay between Safes

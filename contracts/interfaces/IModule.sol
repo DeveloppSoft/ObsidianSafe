@@ -1,6 +1,6 @@
 pragma solidity ^0.4.22;
 
-import '../common/HasOperations.sol';
+import "../common/HasOperations.sol";
 
 
 contract IModule is HasOperations {
@@ -14,6 +14,5 @@ contract IModule is HasOperations {
         address _reimbursementToken, // or 0x0 for ETH
         uint _minimumGasNeeded,
         uint _gasPrice,
-        bytes _signatures
-    ) public view returns (bool);
+        bytes _signatures) public view returns (bool);
 }
