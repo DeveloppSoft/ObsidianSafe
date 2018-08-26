@@ -2,17 +2,25 @@ pragma solidity ^0.4.22;
 
 
 import './Safe.sol';
-
-// TODO delegate proxy?
+import '../modules/Signers.sol';
 
 contract SafeFactory {
     event SafeCreated(address indexed _sender, address _safe);
 
-    // TODO configure initial modules
-    function createSafe(address _initialVerifModule, address _initialExecModule) returns (address) {
-        Safe safe = new Safe(_initialVerifModule, _initialExecModule);
+    function createSafe(address _signer) public returns (address) {
+        address[] memory initialSigners = new address[](1);
+        initialSigners[0] = _signer;
+        uint needSigs = 1;
 
-        SafeCreated(msg.sender, address(safe));
+        address fakeSafe = address(this);
+
+        Signers signerModule = new Signers(fakeSafe, initialSigners, needSigs);
+        Safe safe = new Safe(address(signerModule), address(signerModule));
+
+        // Make the safe the real safe
+        signerModule.updateSafe(address(safe));
+
+        emit SafeCreated(msg.sender, address(safe));
 
         return address(safe);
     }
