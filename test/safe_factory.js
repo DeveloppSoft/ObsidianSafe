@@ -4,8 +4,8 @@ const Safe = artifacts.require('Safe')
 contract('SafeFactory', async accounts => {
     let factory = {}
 
-    it('should deploy factory', async () => {
-        factory = await SafeFactory.new()
+    it('should have deployed factory', async () => {
+        factory = await SafeFactory.deployed()
         assert.ok(factory)
     })
 
