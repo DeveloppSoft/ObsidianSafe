@@ -55,7 +55,7 @@ contract('Safe', async accounts => {
 
             expectedBalance = parseInt(web3.eth.getBalance(txTo), 10) + parseInt(txVal, 10)
 
-            gasPrice = web3.toWei(4, 'gwei')
+            gasPrice = web3.toWei(1, 'wei')
             assert.ok(gasPrice)
 
             initialNonce = parseInt(await safe.currentNonce(), 10)

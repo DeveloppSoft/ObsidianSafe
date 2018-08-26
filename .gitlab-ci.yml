@@ -1,15 +1,43 @@
 image: node:alpine
 
 before_script:
-    - apk update && apk add --no-cache python alpine-sdk git
-    - npm install -g truffle ganache-cli
+    - apk update && apk add --no-cache gawk python alpine-sdk git
+    - npm install -g truffle ganache-cli solium
+    - npm install
 
-all_tests:
+stages:
+    - build
+    - test
+    - security
+
+compile:
+    stage: build
     script:
-        - npm install
         - truffle compile
+
+truffle:
+    stage: test
+    script:
         - truffle test
 
-# Maybe we could add a linter?
+coverage:
+    stage: test
+    script:
+        - npm install solidity-coverage
+        - ./coverage.sh 75
+    coverage: '/coverage: \d+.\d+\%/'
+
+# This could be pushed to a web page?
+gas-reporter:
+    stage: test
+    script:
+        - npm install eth-gas-reporter
+        - cp -f truffle-reporter.js truffle.js
+        - truffle test
+
+linter:
+    stage: security
+    script:
+        - solium -d contracts/
+
 # And static analysis?
-# And coverage?

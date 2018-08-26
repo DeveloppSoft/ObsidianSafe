@@ -1,8 +1,8 @@
 pragma solidity ^0.4.22;
 
-import '../interfaces/IModule.sol';
-import '../libraries/ListOnSteroids.sol';
-import './Module.sol';
+import "../interfaces/IModule.sol";
+import "../libraries/ListOnSteroids.sol";
+import "./Module.sol";
 
 // Manage signing keys
 // Verify signatures
@@ -78,6 +78,7 @@ contract Signers is IModule, Module {
         for (uint i = 0; i < requiredSignatures; i++) {
             // split sig
             // Credit Gnosis Safe
+            // solium-disable-next-line security/no-inline-assembly
             assembly {
                 let pos := mul(0x41, i)
                 r := mload(add(_signatures, add(pos, 0x20)))

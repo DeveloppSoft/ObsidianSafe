@@ -1,7 +1,7 @@
 pragma solidity ^0.4.22;
 
-import '../common/HasOperations.sol';
-import 'openzeppelin-solidity/contracts/ownership/NoOwner.sol';
+import "../common/HasOperations.sol";
+import "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 
 
 contract Module is HasOperations, NoOwner {
