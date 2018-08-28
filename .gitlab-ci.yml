@@ -56,8 +56,7 @@ coverage-page:
     dependencies:
         - coverage
     script:
-        - mkdir -p public
-        - mv coverage public/coverage
+        - mv coverage public
     artifacts:
         paths:
             - public
