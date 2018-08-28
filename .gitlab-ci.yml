@@ -51,7 +51,7 @@ linter:
         - npx solium -d contracts/
 
 # Report, but only for master
-coverage-page:
+pages:
     stage: deploy
     dependencies:
         - coverage
