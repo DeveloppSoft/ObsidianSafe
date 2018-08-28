@@ -1,8 +1,12 @@
-image: node:alpine
+image: node
+
+# Cache modules in between jobs
+cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+        - node_modules/
 
 before_script:
-    - apk update && apk add --no-cache gawk python alpine-sdk git
-    - npm install -g truffle ganache-cli solium
     - npm install
 
 stages:
@@ -14,19 +18,19 @@ stages:
 compile:
     stage: build
     script:
-        - truffle compile
+        - npx truffle compile
 
 truffle:
     stage: test
     script:
-        - truffle test
+        - npx truffle test
 
 coverage:
     stage: test
     script:
         - npm install solidity-coverage
-        - ./coverage.sh 75
-    coverage: '/coverage: \d+.\d+\%/'
+        - ./node_modules/.bin/solidity-coverage
+    coverage: '/All files[ |]+[0-9.]+[ |]+([0-9.]+)/'
     artifacts:
         paths:
             - coverage/
@@ -37,12 +41,13 @@ gas-reporter:
     script:
         - npm install eth-gas-reporter
         - cp -f truffle-reporter.js truffle.js
-        - truffle test
+        - npx truffle test
 
 linter:
     stage: security
     script:
-        - solium -d contracts/
+        - npm install solium
+        - npx solium -d contracts/
 
 # Report, but only for master
 coverage-page:
