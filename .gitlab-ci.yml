@@ -28,7 +28,6 @@ truffle:
 coverage:
     stage: test
     script:
-        - npm install -g truffle
         - npm install solidity-coverage
         - ./node_modules/.bin/solidity-coverage
     coverage: '/All files[ |]+[0-9.]+[ |]+([0-9.]+)/'
