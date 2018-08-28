@@ -28,12 +28,13 @@ truffle:
 coverage:
     stage: test
     script:
+        - npm install -g truffle
         - npm install solidity-coverage
         - ./node_modules/.bin/solidity-coverage
     coverage: '/All files[ |]+[0-9.]+[ |]+([0-9.]+)/'
     artifacts:
         paths:
-            - coverage/
+            - coverage
 
 # This could be pushed to a web page?
 gas-reporter:
@@ -55,10 +56,11 @@ coverage-page:
     dependencies:
         - coverage
     script:
-        - mv coverage/ public/coverage
+        - mkdir -p public
+        - mv coverage public/coverage
     artifacts:
         paths:
-            - public/
+            - public
         expire_in: 30 days
     only:
         - master
