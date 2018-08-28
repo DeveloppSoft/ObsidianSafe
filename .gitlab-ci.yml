@@ -9,6 +9,7 @@ stages:
     - build
     - test
     - security
+    - deploy
 
 compile:
     stage: build
@@ -26,6 +27,9 @@ coverage:
         - npm install solidity-coverage
         - ./coverage.sh 75
     coverage: '/coverage: \d+.\d+\%/'
+    artifacts:
+        paths:
+            - coverage/
 
 # This could be pushed to a web page?
 gas-reporter:
@@ -39,5 +43,19 @@ linter:
     stage: security
     script:
         - solium -d contracts/
+
+# Report, but only for master
+coverage-page:
+    stage: deploy
+    dependencies:
+        - coverage
+    script:
+        - mv coverage/ public/coverage
+    artifacts:
+        paths:
+            - public/
+        expire_in: 30 days
+    only:
+        - master
 
 # And static analysis?
