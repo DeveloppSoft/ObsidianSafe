@@ -14,10 +14,10 @@ contract IAuthOracle is HasOperations {
         address _reimbursementToken, // or 0x0 for ETH
         uint _minimumGasNeeded,
         uint _gasPrice,
-        bytes _signatures) view public;
+        bytes _signatures) view public returns (bool);
     function moduleAuthorized(
         address _module,
         uint _value,
         bytes _data,
-        Operation _op) view public;
+        Operation _op) view public returns (bool);
 }
