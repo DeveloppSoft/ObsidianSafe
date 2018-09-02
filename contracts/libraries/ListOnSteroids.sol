@@ -5,38 +5,51 @@ pragma solidity ^0.4.22;
 library ListOnSteroids {
     struct List {
         uint nbElems;
-        mapping (address => address) elements;
+        mapping (address => address) previous;
+        mapping (address => address) next;
         mapping (address => bool) elemIn;
     }
 
-    address private constant MODULE_HEAD_MARKER = 0x1;
+    address private constant SENTINEL = 0x1;
 
     function init(List storage self) public {
-        self.elements[MODULE_HEAD_MARKER] = MODULE_HEAD_MARKER;
+        self.next[SENTINEL] = SENTINEL;
+        self.previous[SENTINEL] = SENTINEL;
+
         self.nbElems = 0;
     }
 
-    function insert(List storage self, address _module) public {
-        require(_module != MODULE_HEAD_MARKER && _module != 0x0, "Invalid address");
-        require(self.elemIn[_module] == false, "Address already listed");
+    function insert(List storage self, address _element) public {
+        require(_element != SENTINEL && _element != 0x0, "Invalid address");
+        require(self.elemIn[_element] == false, "Address already listed");
 
-        self.elements[_module] = self.elements[MODULE_HEAD_MARKER];
-        self.elements[MODULE_HEAD_MARKER] = _module;
+        self.previous[self.next[SENTINEL]] = _element;
+        self.previous[_element] = SENTINEL;
 
-        self.elemIn[_module] = true;
+        self.next[_element] = self.next[SENTINEL];
+        self.next[SENTINEL] = _element;
+
+        self.elemIn[_element] = true;
 
         self.nbElems++;
     }
 
-    function remove(List storage self, address _prevModule, address _module) public {
-        require(_module != MODULE_HEAD_MARKER && _module != 0x0, "Invalid address");
-        require(self.elemIn[_module] == true, "Address not listed");
-        require(self.elements[_prevModule] == _module, "Invalid pair");
+    function remove(List storage self, address _element) public {
+        //require(_element != SENTINEL && _element != 0x0, "Invalid address");
+        require(self.elemIn[_element] == true, "Address not listed");
 
-        self.elements[_prevModule] = self.elements[_module];
-        self.elements[_module] = 0x0;
+        address prev = self.previous[_element];
+        address next = self.next[_element];
+        assert(prev != 0x0);
+        assert(next != 0x0);
 
-        self.elemIn[_module] = false;
+        self.previous[next] = self.previous[_element];
+        self.next[prev] = self.next[_element];
+
+        self.previous[_element] = 0x0;
+        self.next[_element] = 0x0;
+
+        self.elemIn[_element] = false;
 
         self.nbElems--;
     }
@@ -45,23 +58,19 @@ library ListOnSteroids {
         address[] memory allElems = new address[](self.nbElems);
 
         uint index = 0;
-        address currentElem = self.elements[MODULE_HEAD_MARKER];
+        address currentElem = self.next[SENTINEL];
 
-        while (currentElem != MODULE_HEAD_MARKER) {
+        while (currentElem != SENTINEL) {
             allElems[index] = currentElem;
             index++;
 
-            currentElem = self.elements[currentElem];
+            currentElem = self.next[currentElem];
         }
 
         return allElems;
     }
 
-    function isIn(List storage self, address _module) public view returns (bool) {
-        if (_module == 0x0 || _module == MODULE_HEAD_MARKER) {
-            return false;
-        }
-
-        return self.elemIn[_module];
+    function isIn(List storage self, address _element) public view returns (bool) {
+        return self.elemIn[_element] != 0x0;
     }
 }
