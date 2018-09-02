@@ -3,21 +3,23 @@ pragma solidity ^0.4.22;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
-import "../interfaces/IModule.sol";
 import "../interfaces/ISafe.sol";
-import "./Modulable.sol";
+import '../interfaces/IAuthOracle.sol';
+import '../common/Initializable.sol';
 
-contract Safe is ISafe, Modulable {
+contract Safe is Initializable, ISafe {
     using SafeMath for uint;
 
     uint public currentNonce; // Increment for each TX
+    IAuthOracle public oracle; // Authorize or refuse transactions
 
     event TransactionExecuted(bool indexed _success, address indexed _module, address indexed _to, uint _value, bytes _data, Operation _op);
     event ContractDeployed(address _newContract);
     event GotFunds(address indexed _from, uint _amount);
 
-    constructor(address _initialVerif, address _initialExec) public Modulable(_initialVerif, _initialExec) {
+    function initialize(IAuthOracle _oracle) public isInitializer {
         currentNonce = 0;
+        oracle = _oracle;
     }
 
     // TODO take inspiration from Aragon for modulable token receivers
@@ -49,25 +51,18 @@ contract Safe is ISafe, Modulable {
             return false;
         }
 
-        address[] memory allVerifModules = listVerifModules();
-        for (uint i = 0; i < allVerifModules.length; i++) {
-            if (IModule(allVerifModules[i]).verify(
-                _dest,
-                _value,
-                _data,
-                _op,
-                _nonce,
-                _timestamp,
-                _reimbursementToken,
-                _minimumGasNeeded,
-                _gasPrice,
-                _signatures
-            ) == false) {
-                return false;
-            }
-        }
-
-        return true;
+        return oracle.authorized(
+            _dest,
+            _value,
+            _data,
+            _op,
+            _nonce,
+            _timestamp,
+            _reimbursementToken,
+            _minimumGasNeeded,
+            _gasPrice,
+            _signatures
+        );
     }
 
     function exec(
@@ -138,7 +133,7 @@ contract Safe is ISafe, Modulable {
     }
 
     function execFromModule(address _dest, uint _value, bytes _data, Operation _op) public {
-        require(moduleCanExecuteTx(msg.sender), "Sender not allowed to call this function");
+        require(oracle.moduleAuthorized(msg.sender, _dest, _value, _data, _op));
 
         emit TransactionExecuted(
             executeTx(
