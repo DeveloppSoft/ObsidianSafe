@@ -23,9 +23,9 @@ contract AuthOracle is Initializable, IAuthOracle {
         _;
     }
 
-    function initialize(address _safe, address _signer, uint _minimumSignatures) public isInitializer {
+    function initialize(address _safe, address _signer) public isInitializer {
         safe = _safe;
-        minimumSignatures = _minimumSignatures;
+        minimumSignatures = 1;
 
         signers.init();
         modules.init();

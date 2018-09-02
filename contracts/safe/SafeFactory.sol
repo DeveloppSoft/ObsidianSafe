@@ -8,13 +8,11 @@ contract SafeFactory {
     event SafeCreated(address indexed _sender, address _safe);
 
     function createSafe(address _signer) public returns (address) {
-        uint needSigs = 1;
-
         AuthOracle oracle = new AuthOracle();
         Safe safe = new Safe();
 
         safe.initialize(oracle);
-        oracle.initialize(address(safe), _signer, needSigs);
+        oracle.initialize(address(safe), _signer);
 
         emit SafeCreated(_signer, address(safe));
 
