@@ -14,7 +14,7 @@ contract SafeFactory {
         Safe safe = new Safe();
 
         safe.initialize(oracle);
-        oracle.initialize(address(safe), msg.sender, needSigs);
+        oracle.initialize(address(safe), _signer, needSigs);
 
         emit SafeCreated(_signer, address(safe));
 
