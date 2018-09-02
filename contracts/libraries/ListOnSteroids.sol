@@ -19,7 +19,7 @@ library ListOnSteroids {
         self.nbElems = 0;
     }
 
-    function insert(List storage self, address _element) public {
+    function add(List storage self, address _element) public {
         require(_element != SENTINEL && _element != 0x0, "Invalid address");
         require(self.elemIn[_element] == false, "Address already listed");
 
