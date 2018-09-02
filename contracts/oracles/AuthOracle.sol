@@ -1,7 +1,7 @@
 pragma solidity ^0.4.22;
 
 import '../common/Initializable.sol';
-import '../interafces/IAuthOracle.sol';
+import '../interfaces/IAuthOracle.sol';
 import '../libraries/ListOnSteroids.sol';
 
 
@@ -116,25 +116,27 @@ contract AuthOracle is Initializable, IAuthOracle {
             return false;
         }
 
-        bytes32 hash = getTxHash(
-            _dest,
-            _value,
-            _data,
-            _op,
-            _nonce,
-            _timestamp,
-            _reimbursementToken, // or 0x0 for ETH
-            _minimumGasNeeded,
-            _gasPrice
-        );
-
-        bytes32 ethHash = keccak256(
+        bytes32 hash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                hash
+                getTxHash(
+                    _dest,
+                    _value,
+                    _data,
+                    _op,
+                    _nonce,
+                    _timestamp,
+                    _reimbursementToken, // or 0x0 for ETH
+                    _minimumGasNeeded,
+                    _gasPrice
+                )
             )
         );
 
+        return verify(hash, _signatures);
+    }
+
+    function verify(bytes32 _hash, bytes _signatures) internal view returns (bool) {
         address last = 0x0;
         address current = 0x0;
 
@@ -155,8 +157,9 @@ contract AuthOracle is Initializable, IAuthOracle {
                 v += 27;
             }
 
-            current = ecrecover(ethHash, v, r, s);
-            if (current <= last || signers.isIn(current) == false) {
+            current = ecrecover(_hash, v, r, s);
+            if (current <= last ||
+                signers.isIn(current) == false) {
                 return false;
             }
 
@@ -168,6 +171,7 @@ contract AuthOracle is Initializable, IAuthOracle {
         
     function moduleAuthorized(
         address _module,
+        address _dest,
         uint _value,
         bytes _data,
         Operation _op
@@ -175,6 +179,6 @@ contract AuthOracle is Initializable, IAuthOracle {
         // ATM it is quite simple, in the future we could have a permission system
         return modules.isIn(_module);
 
-        _value; _data; _op;
+        _dest; _value; _data; _op;
     }
 }

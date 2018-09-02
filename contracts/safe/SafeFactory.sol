@@ -1,8 +1,8 @@
 pragma solidity ^0.4.22;
 
-
 import "./Safe.sol";
-import "../oracles/AuthOracle.sol"
+import "../oracles/AuthOracle.sol";
+
 
 contract SafeFactory {
     event SafeCreated(address indexed _sender, address _safe);
@@ -11,12 +11,12 @@ contract SafeFactory {
         uint needSigs = 1;
 
         AuthOracle oracle = new AuthOracle();
-        Safe safe = new Safe(oracle);
+        Safe safe = new Safe();
 
         safe.initialize(oracle);
-        oracle.initialize(address(safe), msg.sender, needSigs)
+        oracle.initialize(address(safe), msg.sender, needSigs);
 
-        emit SafeCreated(msg.sender, address(safe));
+        emit SafeCreated(_signer, address(safe));
 
         return address(safe);
     }

@@ -71,6 +71,6 @@ library ListOnSteroids {
     }
 
     function isIn(List storage self, address _element) public view returns (bool) {
-        return self.elemIn[_element] != 0x0;
+        return self.elemIn[_element];
     }
 }

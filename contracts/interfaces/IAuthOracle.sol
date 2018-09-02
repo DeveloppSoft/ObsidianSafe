@@ -17,6 +17,7 @@ contract IAuthOracle is HasOperations {
         bytes _signatures) view public returns (bool);
     function moduleAuthorized(
         address _module,
+        address _dest,
         uint _value,
         bytes _data,
         Operation _op) view public returns (bool);
