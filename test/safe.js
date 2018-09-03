@@ -1,6 +1,7 @@
 const Safe = artifacts.require('Safe')
 const SafeFactory = artifacts.require('SafeFactory')
-const Signers = artifacts.require('Signers')
+const AuthOracle = artifacts.require('AuthOracle')
+const assertRevert = require('./helpers/revert.js').assertRevert
 
 const CALL = 0
 const DELEGATECALL = 1
@@ -21,16 +22,7 @@ contract('Safe', async accounts => {
 
     context('Transactions', async () => {
         it('cannot call execFromModule if not module', async () => {
-            try {
-                await safe.execFromModule(accounts[0], web3.toWei(1, 'ether'), '0x0', CALL)
-            } catch (err) {
-                assert(err, 'Expected an error but did not get one')
-                assert.equal(
-                    err.message,
-                    'VM Exception while processing transaction: revert', 
-                    'Expected revert error'
-                )
-            }
+            assertRevert(safe.execFromModule(accounts[0], web3.toWei(1, 'ether'), '0x0', CALL))
         })
 
         const txTo = accounts[4]
@@ -49,6 +41,8 @@ contract('Safe', async accounts => {
         let expectedBalance = {}
         let initialNonce = {}
 
+        let oracle = {}
+
         before(async () => {
             txVal = web3.toWei(0.5, 'ether')
             assert.ok(txVal)
@@ -59,16 +53,12 @@ contract('Safe', async accounts => {
             assert.ok(gasPrice)
 
             initialNonce = parseInt(await safe.currentNonce(), 10)
+            
+            oracle = await AuthOracle.at(await safe.oracle())
         })
 
         it('prepare tx', async () => {
-            // Get signer module
-            const modules = await safe.listVerifModules()
-            const signerAddress = modules[0] // Only 1 module
-            const signers = await Signers.at(signerAddress)
-
-            // Ask it the hash
-            hash = await signers.getTxHash(
+            hash = await oracle.getTxHash(
                 txTo,
                 txVal,
                 txData,
@@ -83,7 +73,7 @@ contract('Safe', async accounts => {
             signature = await web3.eth.sign(owner, hash)
 
             assert.isTrue(
-                await signers.verify(
+                await oracle.authorized(
                     txTo,
                     txVal,
                     txData,
@@ -118,8 +108,8 @@ contract('Safe', async accounts => {
         })
 
         it('revert if not enough gas', async () => {
-            try {
-                await safe.exec(
+            assertRevert(
+                safe.exec(
                     txTo,
                     txVal,
                     txData,
@@ -132,14 +122,7 @@ contract('Safe', async accounts => {
                     signature,
                     { gasPrice: gasPrice, gas: minimumGas - 1000 }
                 )
-            } catch (err) {
-                assert(err, 'Expected an error but did not get one')
-                assert.equal(
-                    err.message,
-                    'VM Exception while processing transaction: revert', 
-                    'Expected revert error'
-                )
-            }
+            )
         })
 
         it('send funds to safe', async () => {
@@ -150,8 +133,8 @@ contract('Safe', async accounts => {
         // Here, we have enough funds to EXEC the TX, but not enough to
         // reimburse the gas cost
         it('revert if cannot pay', async () => {
-            try {
-                await safe.exec(
+            assertRevert(
+                safe.exec(
                     txTo,
                     txVal,
                     txData,
@@ -164,14 +147,7 @@ contract('Safe', async accounts => {
                     signature,
                     { gasPrice: gasPrice }
                 )
-            } catch (err) {
-                assert(err, 'expected an error but did not get one')
-                assert.equal(
-                    err.message,
-                    'VM Exception while processing transaction: revert', 
-                    'expected revert error'
-                )
-            }
+            )
         })
 
         it('send funds to safe', async () => {
@@ -181,8 +157,8 @@ contract('Safe', async accounts => {
     
         it('revert if wrong signature', async () => {
             // Signature is valid, but parameter isn't
-            try {
-                await safe.exec(
+            assertRevert(
+                safe.exec(
                     txTo,
                     txVal,
                     txData,
@@ -195,14 +171,7 @@ contract('Safe', async accounts => {
                     signature,
                     { gasPrice: gasPrice }
                 )
-            } catch (err) {
-                assert(err, 'expected an error but did not get one')
-                assert.equal(
-                    err.message,
-                    'VM Exception while processing transaction: revert', 
-                    'expected revert error'
-                )
-            }
+            )
         })
 
         let balanceBefore = {}
@@ -244,8 +213,8 @@ contract('Safe', async accounts => {
         })
 
         it('cannot replay tx', async () => {
-            try {
-                await safe.exec(
+            assertRevert(
+                safe.exec(
                     txTo,
                     txVal,
                     txData,
@@ -258,14 +227,17 @@ contract('Safe', async accounts => {
                     signature,
                     { gasPrice: gasPrice }
                 )
-            } catch (err) {
-                assert(err, 'expected an error but did not get one')
-                assert.equal(
-                    err.message,
-                    'VM Exception while processing transaction: revert', 
-                    'expected revert error'
-                )
-            }
+            )
+        })
+
+        context('Module', async () => {
+            const fakeModule = accounts[1]
+
+            it('prepare tx')
+
+            it('add module')
+
+            it('grant access to module')
         })
     })
 })
