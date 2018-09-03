@@ -198,12 +198,48 @@ contract('Safe', async accounts => {
 
         context('Module', async () => {
             const fakeModule = accounts[1]
+            let tx = {}
+            let signature = {}
 
-            it('prepare tx')
+            it('prepare tx', async () => {
+                tx = await TX.prepareTx(
+                    safe,
+                    {
+                        to: oracle.address,
+                        op: 0, // CALL
+                        gasPrice: web3.toWei(1, 'wei'),
+                        data: await TX.encodeABI(oracle, 'addModule', fakeModule)
+                    }
+                )
+            })
 
-            it('add module')
+            it('sign tx', async () => {
+                signature = await TX.sign(
+                    oracle,
+                    tx,
+                    owner
+                )
+            })
 
-            it('grant access to module')
+            it('add module', async () => {
+                await safe.exec(
+                    tx.to,
+                    tx.value,
+                    tx.data,
+                    tx.op,
+                    tx.nonce,
+                    tx.timestamp,
+                    tx.token,
+                    tx.gas,
+                    tx.gasPrice,
+                    signature,
+                    { gasPrice: tx.gasPrice }
+                )
+            })
+
+            it('grant access to module', async () => {
+                safe.execFromModule(accounts[0], web3.toWei(1, 'wei'), '0x0', 0, { from: fakeModule })
+            })
         })
     })
 })

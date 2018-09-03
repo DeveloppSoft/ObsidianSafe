@@ -6,8 +6,8 @@ module.exports = {
     },
 
     encodeABI: async (truffleContract, method, ...methodArgs) => {
-        const web3Contract = await (new web3.eth.Contract(truffleContract.abi, truffleContract.address))
-        return web3Contract[method](methodArgs).encodeABI()
+        const web3Contract = web3.eth.contract(truffleContract.abi).at(truffleContract.address)
+        return await web3Contract[method].getData(...methodArgs)
     },
 
     prepareTx: async (safeContract, tx) => {
