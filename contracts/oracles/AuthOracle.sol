@@ -2,14 +2,14 @@ pragma solidity ^0.4.22;
 
 import '../common/Initializable.sol';
 import '../interfaces/IAuthOracle.sol';
-import '../libraries/ListOnSteroids.sol';
+import '../libraries/DLL.sol';
 
 
 contract AuthOracle is Initializable, IAuthOracle {
-    using ListOnSteroids for ListOnSteroids.List;
+    using DLL for DLL.Data;
 
-    ListOnSteroids.List private signers;
-    ListOnSteroids.List private modules;
+    DLL.Data private signers;
+    DLL.Data private modules;
 
     uint public minimumSignatures;
     address public safe;
@@ -27,14 +27,11 @@ contract AuthOracle is Initializable, IAuthOracle {
         safe = _safe;
         minimumSignatures = 1;
 
-        signers.init();
-        modules.init();
-
-        signers.add(_signer);
+        signers.append(_signer);
     }
 
     function addSigner(address _signer) public onlySafeContract {
-        signers.add(_signer);
+        signers.append(_signer);
         emit SignarUpdated(_signer, true);
     }
 
@@ -55,7 +52,7 @@ contract AuthOracle is Initializable, IAuthOracle {
     }
 
     function addModule(address _module) public onlySafeContract {
-        modules.add(_module);
+        modules.append(_module);
         emit ModuleUpdated(_module, true);
     }
 
@@ -159,7 +156,7 @@ contract AuthOracle is Initializable, IAuthOracle {
 
             current = ecrecover(_hash, v, r, s);
             if (current <= last ||
-                signers.isIn(current) == false) {
+                signers.contains(current) == false) {
                 return false;
             }
 
@@ -177,7 +174,7 @@ contract AuthOracle is Initializable, IAuthOracle {
         Operation _op
     ) view public returns (bool) {
         // ATM it is quite simple, in the future we could have a permission system
-        return modules.isIn(_module);
+        return modules.contains(_module);
 
         _dest; _value; _data; _op;
     }
