@@ -16,6 +16,7 @@ contract Safe is Initializable, ISafe {
     event TransactionExecuted(bool indexed _success, address indexed _module, address indexed _to, uint _value, bytes _data, Operation _op);
     event ContractDeployed(address _newContract);
     event GotFunds(address indexed _from, uint _amount);
+    event OracleUpdated(address _new);
 
     function initialize(IAuthOracle _oracle) public isInitializer {
         currentNonce = 0;
@@ -63,6 +64,14 @@ contract Safe is Initializable, ISafe {
             _gasPrice,
             _signatures
         );
+    }
+
+    function updateOracle(IAuthOracle _new) public {
+        require(msg.sender == address(this), "Can only be called by this");
+
+        oracle = _new;
+
+        emit OracleUpdated(_new);
     }
 
     function exec(
