@@ -86,7 +86,7 @@ contract('Safe', async accounts => {
                     tx.gas,
                     tx.gasPrice,
                     signature,
-                    { gasPrice: tx.gasPrice, gas: tx.gas - 1000 }
+                    { gasPrice: tx.gasPrice, gas: tx.gas - 1 }
                 )
             )
         })
