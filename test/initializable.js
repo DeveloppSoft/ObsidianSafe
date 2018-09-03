@@ -9,7 +9,7 @@ contract('Initializable', async accounts => {
         await safe.initialize(accounts[0])
 
         assert(await safe.initialized(), 'Safe is not initialized')
-        assertRevert(safe.initialize(accounts[1]))
+        await assertRevert(safe.initialize(accounts[1]))
     })
 
     it('is used by AuthOracle', async () => {
@@ -17,6 +17,6 @@ contract('Initializable', async accounts => {
         await oracle.initialize(accounts[0], accounts[1])
 
         assert(await oracle.initialized(), 'Oracle is not initialized')
-        assertRevert(oracle.initialize(accounts[2], accounts[3]))
+        await assertRevert(oracle.initialize(accounts[2], accounts[3]))
     })
 })

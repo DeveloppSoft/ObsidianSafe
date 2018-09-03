@@ -20,7 +20,7 @@ contract('Safe', async accounts => {
 
     context('Transactions', async () => {
         it('cannot call execFromModule if not module', async () => {
-            assertRevert(safe.execFromModule(accounts[0], web3.toWei(1, 'ether'), '0x0', 0))
+            await assertRevert(safe.execFromModule(accounts[0], web3.toWei(1, 'ether'), '0x0', 0))
         })
 
         let tx = {}
@@ -74,7 +74,7 @@ contract('Safe', async accounts => {
         })
 
         it('revert if not enough gas', async () => {
-            assertRevert(
+            await assertRevert(
                 safe.exec(
                     tx.to,
                     tx.value,
@@ -99,7 +99,7 @@ contract('Safe', async accounts => {
         // Here, we have enough funds to EXEC the TX, but not enough to
         // reimburse the gas cost
         it('revert if cannot pay', async () => {
-            assertRevert(
+            await assertRevert(
                 safe.exec(
                     tx.to,
                     tx.value,
@@ -123,7 +123,7 @@ contract('Safe', async accounts => {
 
         it('revert if wrong signature', async () => {
             // Signature is valid, but parameter isn't
-            assertRevert(
+            await assertRevert(
                 safe.exec(
                     tx.to,
                     tx.value,
@@ -179,7 +179,7 @@ contract('Safe', async accounts => {
         })
 
         it('cannot replay tx', async () => {
-            assertRevert(
+            await assertRevert(
                 safe.exec(
                     tx.to,
                     tx.value,
