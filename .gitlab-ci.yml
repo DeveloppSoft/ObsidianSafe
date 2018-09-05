@@ -7,7 +7,7 @@ cache:
         - node_modules/
 
 before_script:
-    - npm install
+    - yarn
 
 stages:
     - build
@@ -18,17 +18,17 @@ stages:
 compile:
     stage: build
     script:
-        - npx truffle compile
+        - ./node_modules/.bin/truffle compile
 
 truffle:
     stage: test
     script:
-        - npx truffle test
+        - ./node_modules/.bin/truffle test
 
 coverage:
     stage: test
     script:
-        - npm install solidity-coverage
+        - yarn add solidity-coverage
         - ./node_modules/.bin/solidity-coverage
     coverage: '/All files[ |]+[0-9.]+[ |]+([0-9.]+)/'
     artifacts:
@@ -39,15 +39,15 @@ coverage:
 gas-reporter:
     stage: test
     script:
-        - npm install eth-gas-reporter
+        - yarn add eth-gas-reporter
         - cp -f truffle-reporter.js truffle.js
-        - npx truffle test
+        - ./node_modules/.bin/truffle test
 
 linter:
     stage: security
     script:
-        - npm install solium
-        - npx solium -d contracts/
+        - yarn add solium
+        - ./node_modules/.bin/solium -d contracts/
 
 # Report, but only for master
 pages:
